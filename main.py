@@ -9,6 +9,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import ChatOpenAI
 import bs4
 
+
 load_dotenv()
 
 llm = ChatOpenAI(model="gpt-3.5-turbo")
@@ -22,7 +23,7 @@ loader = WebBaseLoader(
     )
 )
 
-docs= loader.load()
+docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
 splits = text_splitter.split_documents(docs)
@@ -30,14 +31,25 @@ vector_store = Chroma.from_documents(documents=splits, embedding=OpenAIEmbedding
 
 retriever = vector_store.as_retriever()
 
-#reg prompt
-
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
+
+#reg prompt
+prompt = hub.pull("rlm/rag-prompt")
+
+chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | prompt
+    | llm
+    | StrOutputParser() 
+)
+
+
 
 
 
 if __name__ == "__main__":
     
-    print(format_docs(docs))
+    for chunk in chain.stream("What is the main idea of the article?"):
+        print(chunk, end="", flush=True)
