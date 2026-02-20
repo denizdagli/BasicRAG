@@ -24,8 +24,20 @@ loader = WebBaseLoader(
 
 docs= loader.load()
 
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+splits = text_splitter.split_documents(docs)
+vector_store = Chroma.from_documents(documents=splits, embedding=OpenAIEmbeddings())
+
+retriever = vector_store.as_retriever()
+
+#reg prompt
+
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
 
 
 if __name__ == "__main__":
     
-    print(f"Number of documents loaded: {docs}")
+    print(format_docs(docs))
